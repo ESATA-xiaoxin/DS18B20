@@ -1,0 +1,127 @@
+C51 COMPILER V9.60.0.0   MAIN                                                              03/17/2022 19:56:28 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: D:\APP\keil5\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\ma
+                    -in.lst) TABS(2) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          #include <STC15F2K60S2.h>  
+   2          #include <onewire.h>
+   3          
+   4          #define uchar unsigned char
+   5          #define uint unsigned int 
+   6            
+   7          uchar code ndottab[]={0xc0,0xf9,0xa4,0xb0,0x99,0x92,0x82,0xf8,0x80,0x90};
+   8          uchar code dottab[]={0x40,0x79,0x20,0x30,0x19,0x12,0x02,0x78,0x00,0x10};
+   9          uint temp=0;
+  10          
+  11          void Init_System();
+  12          void DS18B20();
+  13          void delayms(uint ms);
+  14          void display();
+  15          void display_bit(uchar pos,uchar dat);
+  16          
+  17          void main()
+  18          {
+  19   1        Init_System();
+  20   1        while(1)
+  21   1        {
+  22   2          DS18B20();
+  23   2          display();
+  24   2        }
+  25   1      }
+  26          
+  27          void Init_System()
+  28          {
+  29   1        P2 = (P2 & 0x1f) | 0x80;
+  30   1        P0=0xff;
+  31   1        P2 = (P2 & 0x1f) | 0xa0;
+  32   1        P0=0x00;
+  33   1        P2 = (P2 & 0x1f) | 0xc0;
+  34   1        P0=0xff;
+  35   1        P2 = (P2 & 0x1f) | 0xe0;
+  36   1        P0=0xff;
+  37   1      }
+  38          
+  39          void display_bit(uchar pos,uchar dat)
+  40          {
+  41   1        P2 = (P2 & 0x1f) | 0xc0;
+  42   1        P0=0x01 << pos;
+  43   1        P2 = (P2 & 0x1f) | 0xe0;
+  44   1        P0=dat;
+  45   1      }
+  46          
+  47          void display()
+  48          {
+  49   1        display_bit(0,0xff);
+  50   1        delayms(1);
+  51   1        display_bit(1,0xff);
+  52   1        delayms(1);
+  53   1        display_bit(2,0xff);
+  54   1        delayms(1);
+C51 COMPILER V9.60.0.0   MAIN                                                              03/17/2022 19:56:28 PAGE 2   
+
+  55   1        display_bit(3,0xff);
+  56   1        delayms(1);
+  57   1        display_bit(4,0xff);
+  58   1        delayms(1);
+  59   1        display_bit(5,ndottab[temp/100]);
+  60   1        delayms(1);
+  61   1        display_bit(6,dottab[temp%100/10]);
+  62   1        delayms(1);
+  63   1        display_bit(7,ndottab[temp%10]);
+  64   1        delayms(1);
+  65   1        P2 = (P2 & 0x1f) | 0xc0;
+  66   1        P0=0xff;
+  67   1        P2 = (P2 & 0x1f) | 0xe0;
+  68   1        P0=0xff;
+  69   1      }
+  70          void delayms(uint ms)
+  71          {
+  72   1        uint i,j;
+  73   1        for(i=ms;i>0;i--)
+  74   1          for(j=810;j>0;j--);
+  75   1      }
+  76          
+  77          void DS18B20()
+  78          {
+  79   1        uchar LSB,MSB;
+  80   1        init_ds18b20();      //DS18B20复位
+  81   1        Write_DS18B20(0xcc); //跳过ROM操作指令
+  82   1        Write_DS18B20(0x44); // 开始温度转换
+  83   1        
+  84   1        delayms(1);       //等待温度转化完成,1000us
+  85   1        
+  86   1        init_ds18b20();     // 复位
+  87   1        Write_DS18B20(0xcc);
+  88   1        Write_DS18B20(0xbe); // 读取高速寄存器
+  89   1        
+  90   1        LSB=Read_DS18B20();  //读取温度数据低八位
+  91   1        MSB=Read_DS18B20();  //读取温度数据高八位
+  92   1        init_ds18b20();
+  93   1        temp=MSB;
+  94   1        temp=(temp << 8) | LSB;
+  95   1        if((temp & 0xf800) == 0x0000)  //等号前括号没加给了一个警告, 高五位全为0是正数，全为1是负数
+  96   1        {
+  97   2          temp >>= 4;   //如果想要显示整数，只需要这一句代码就行
+  98   2          temp = temp * 10;  //此处显示是带小数，要将整数*10
+  99   2          temp=temp + (LSB & 0X0F)*0.625;  //LSB低四位是小数，(LSB & 0X0F)*0.625=(LSB & 0X0F)*0.0625*10
+ 100   2        }
+ 101   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    445    ----
+   CONSTANT SIZE    =     20    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      2       2
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
